@@ -10,3 +10,10 @@ $create a table called mails
 -> Subject varchar(255), 
 -> Date varchar(255),
 -> labels varchar(255));
+
+
+gmail_auth.py for fetching mails to db
+
+filters.py for filtering the mails from db and doing actions on them
+
+rules.json is for mentioning the rules

@@ -58,7 +58,6 @@ def main():
         querry = "INSERT INTO mails VALUES(%s,%s,%s,%s,%s,%s)"
         for i in l:
             val=(i['s_no'],i['message_id'],i['From'],i['To'],i['Subject'],i['Date'])
-            print(val)
             cur.execute(querry,val)
         db.commit()
 

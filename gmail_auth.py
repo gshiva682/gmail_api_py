@@ -46,20 +46,23 @@ def main():
         l=[]
         for msg in messages:
             result = service.users().messages().get(userId='me',id=msg.get('id')).execute()
+            labels=result['labelIds']
             headers=result['payload']['headers'] 
             data={'s_no':cnt,'message_id':msg.get('id')}
             for key in headers:
                 if(key['name']=='Subject' or key['name']=='From' or key['name']=="To" or key['name']=="Date"):
                     if(len(key['value'])>60):key['value']=key['value'][:60]+"..."
-                    data[key['name']] = key['value'] 
+                    data[key['name']] = key['value']
+            data['labels']=(',').join(labels) 
             l.append(data)      
             cnt+=1
 
-        querry = "INSERT INTO mails VALUES(%s,%s,%s,%s,%s,%s)"
+        querry = "INSERT INTO mails VALUES(%s,%s,%s,%s,%s,%s,%s)"
         for i in l:
-            val=(i['s_no'],i['message_id'],i['From'],i['To'],i['Subject'],i['Date'])
+            val=(i['s_no'],i['message_id'],i['From'],i['To'],i['Subject'],i['Date'],i['labels'])
             cur.execute(querry,val)
         db.commit()
+        print("Emails Fetched")
 
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.

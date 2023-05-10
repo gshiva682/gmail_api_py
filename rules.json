@@ -9,7 +9,7 @@
         {
             "field": "Subject",
             "predicate": "contains",
-            "value": "Wokeness"
+            "value": "a"
         },
         {
             "field": "Date",
@@ -20,11 +20,11 @@
     "actions":[
         {
             "action":"mark",
-            "value":"read"
+            "value":"unread"
         },
         {
             "action": "move",
-            "value":"promotions"
+            "value":"IMPORTANT"
         }
     ]
 }

@@ -13,6 +13,7 @@ from googleapiclient.errors import HttpError
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly','https://www.googleapis.com/auth/gmail.modify']
+field_index = {"message_id":1,"From":2, "To":3, "Subject":4, "Date":5,"lables":6}
 
 def cred_obj():
     creds = None
@@ -30,20 +31,17 @@ def cred_obj():
     return creds
 
 def predicate_equals(r, mail):
-   field_index = {"message_id":1,"From":2, "To":3, "Subject":4, "Date":5}
    if mail[field_index[r['field']]].lower()==r['value'].lower():
        return 1
    return 0
 
 def predicate_contains(r, mail):
-    field_index = {"message_id":1,"From":2, "To":3, "Subject":4, "Date":5}   
     x = re.findall(r['value'].lower(), mail[field_index[r['field']]].lower())
     if x:
         return 1
     return 0
 
 def predicate_less_than(r, mail):
-    field_index = {"message_id":1,"From":2, "To":3, "Subject":4, "Date":5}
     months = dict((month, index) for index, month in enumerate(calendar.month_abbr) if month)
     
     d = mail[5].split()
@@ -57,12 +55,21 @@ def predicate_less_than(r, mail):
         return 1
     return 0
 
-def process_actions(actions,removeLabelIds,addLabelIds):
+def process_actions(actions,mail,service):
+    removeLabelIds=[]
+    addLabelIds=[]
+    labels=mail[6].split(",")
     for i in actions:
         if(i['action']=='mark'):
-            removeLabelIds.append("UNREAD" if i["value"]=="read" else "READ")
-    print(removeLabelIds,addLabelIds)
-    return 0
+            if(i['value']=='read' and "UNREAD" in labels):
+                removeLabelIds.append("UNREAD")
+            if(i['value']=="unread" and "UNREAD" not in labels):
+                addLabelIds.append("UNREAD")
+        if(i['action']=='move'):
+            if(i['value'] not in labels):
+                addLabelIds.append(i['value'])
+    if(len(removeLabelIds)>0 or len(addLabelIds)>0):
+        service.users().messages().modify(userId='me',id=mail[1],body={"removeLabelIds":removeLabelIds,"addLabelIds":addLabelIds}).execute()
 
 service = build('gmail', 'v1', credentials=cred_obj())
 db = mysql.connector.connect(host="localhost",user="root",password="",database="emailDB",auth_plugin='mysql_native_password',charset='utf8mb4',collation='utf8mb4_unicode_ci')
@@ -71,15 +78,13 @@ cur = db.cursor()
 with open("rules.json","r") as f:
     rules = json.load(f)
 
-json_obj={"removeLabelIds": ["UNREAD"],"addLabelIds": []}
+
 cur.execute("SELECT * FROM mails")
 result = cur.fetchall()
 removeLabelIds=[]
 addLabelIds=[] 
 action=rules['actions'] 
-process_actions(action,removeLabelIds,addLabelIds)
 for mail in result:
-    #print(mail)
     l=[]
     for r in rules['rules']:
         if r['predicate']=="equals":
@@ -89,6 +94,6 @@ for mail in result:
         if r['predicate']=="less_than":
             l.append(predicate_less_than(r, mail))
     if l.count(1)==len(l) and rules['predicate']=='all':
-        service.users().messages().modify(userId='me',id="18801d91cd0f45af",body=json_obj).execute()
+        process_actions(action,mail,service)
     elif l.count(1)>=1 and rules['predicate']=='any':
-        print(mail[1],mail)
+        process_actions(action,mail,service)

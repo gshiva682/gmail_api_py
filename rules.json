@@ -1,0 +1,30 @@
+{
+    "predicate": "all",
+    "rules": [
+        {
+            "field": "From",
+            "predicate": "equals",
+            "value": "Twitter <info@twitter.com>"
+        },
+        {
+            "field": "Subject",
+            "predicate": "contains",
+            "value": "Wokeness"
+        },
+        {
+            "field": "Date",
+            "predicate": "less_than",
+            "value": "4"
+        }
+    ],
+    "actions":[
+        {
+            "action":"mark",
+            "value":"read"
+        },
+        {
+            "action": "move",
+            "value":"promotions"
+        }
+    ]
+}
